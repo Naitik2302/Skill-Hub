@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AES Secure Tool</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #282c34, #3a3d42);
+      color: #f1f1f1;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #444952;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2rem;
+      color: #00b4d8;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      border-bottom: 2px solid #333;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      color: #ddd;
+      background: #55595e;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .tab.active {
+      background: #00b4d8;
+      color: #222;
+    }
+
+    .tab:hover {
+      background: #1b9dbd;
+    }
+
+    .section {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    label {
+      font-size: 1rem;
+      margin-top: 15px;
+      display: block;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 15px;
+      background: #00b4d8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #007a9c;
+    }
+
+    .result-box {
+      background: #333;
+      padding: 10px;
+      border-radius: 5px;
+      color: #00d4ff;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: #aaa;
+      font-size: 0.9rem;
+    }
+
+    .footer a {
+      color: #00b4d8;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AES Encryption & Decryption</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('encryption')">Encryption</div>
+      <div class="tab" onclick="switchTab('decryption')">Decryption</div>
+    </div>
+
+    <!-- Encryption Section -->
+    <div id="encryption" class="section active">
+      <h2>Encrypt Your Data</h2>
+      <label for="encryptionKey">Generated Key</label>
+      <input type="text" id="encryptionKey" placeholder="Generate a key or paste one" readonly>
+      <button onclick="generateEncryptionKey()">Generate Key</button>
+
+      <label for="plaintext">Message to Encrypt</label>
+      <textarea id="plaintext" rows="4" placeholder="Enter your message"></textarea>
+
+      <button onclick="encryptText()">Encrypt</button>
+
+      <label for="encryptedText">Encrypted Result</label>
+      <textarea id="encryptedText" rows="4" class="result-box" readonly placeholder="Encrypted text will appear here"></textarea>
+    </div>
+
+    <!-- Decryption Section -->
+    <div id="decryption" class="section">
+      <h2>Decrypt Your Data</h2>
+      <label for="decryptionKey">Decryption Key</label>
+      <input type="text" id="decryptionKey" placeholder="Paste your decryption key">
+
+      <label for="ciphertext">Encrypted Message</label>
+      <textarea id="ciphertext" rows="4" placeholder="Paste the encrypted message here"></textarea>
+
+      <button onclick="decryptText()">Decrypt</button>
+
+      <label for="decryptedText">Decrypted Result</label>
+      <textarea id="decryptedText" rows="4" class="result-box" readonly placeholder="Decrypted message will appear here"></textarea>
+    </div>
+
+    <div class="footer">
+      <p>Secure your messages with AES encryption. Learn more about <a href="#">data security</a>.</p>
+    </div>
+  </div>
+
+  <script>
+    const apiBase = "http://127.0.0.1:5000";
+
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      const tabs = document.querySelectorAll(".tab");
+      const sections = document.querySelectorAll(".section");
+
+      tabs.forEach(tab => tab.classList.remove("active"));
+      sections.forEach(section => section.classList.remove("active"));
+
+      document.getElementById(tabId).classList.add("active");
+      document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add("active");
+    }
+
+    // Generate Encryption Key
+    async function generateEncryptionKey() {
+      try {
+        const response = await fetch(`${apiBase}/generate-key`);
+        const result = await response.json();
+        document.getElementById("encryptionKey").value = result.key || "Error generating key.";
+      } catch (error) {
+        alert("Unable to generate a key. Check the server.");
+      }
+    }
+
+    // Encrypt Text
+    async function encryptText() {
+      const key = document.getElementById("encryptionKey").value;
+      const plaintext = document.getElementById("plaintext").value;
+
+      if (!key || !plaintext) {
+        alert("Please provide both a key and plaintext.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/encrypt`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, text: plaintext }),
+        });
+        const data = await response.json();
+        document.getElementById("encryptedText").value = data.encrypted_text || `Error: ${data.error}`;
+      } catch (error) {
+        alert("Error during encryption.");
+      }
+    }
+
+    // Decrypt Text
+    async function decryptText() {
+      const key = document.getElementById("decryptionKey").value;
+      const encryptedText = document.getElementById("ciphertext").value;
+
+      if (!key || !encryptedText) {
+        alert("Please provide both the key and encrypted message.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/decrypt`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, text: encryptedText }),
+        });
+        const data = await response.json();
+        document.getElementById("decryptedText").value = data.decrypted_text || `Error: ${data.error}`;
+      } catch (error) {
+        alert("Error during decryption.");
+      }
+    }
+  </script>
+</body>
+</html>
